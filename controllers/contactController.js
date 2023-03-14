@@ -1,14 +1,17 @@
 const asyncHandler = require("express-async-handler");
+const validateTokenHandler = require("../middleware/validateTokenHandler");
 const Contact = require("../models/contactModel");
 //@desc Get all contacts
 //@route GET /api/contacts
+//@access private
 const getContact = asyncHandler(async (req, res) => {
-    const contacts = await Contact.find();
+    const contacts = await Contact.find({user_id : req.user.id}); //it will fetch the contacts associated with that particular user
   res.status(200).json(contacts);
 });
 
 //@desc Create new contact
 //@route POST /api/contacts
+// @access private
 const createContact = asyncHandler(async (req, res) => {
     const {name, email, phone} = req.body;
     if(!name || !email || !phone){
@@ -19,6 +22,7 @@ const createContact = asyncHandler(async (req, res) => {
         name,
         email,
         phone,
+        user_id: req.user.id,
     });
 
   res.status(201).json(contact);
@@ -26,6 +30,7 @@ const createContact = asyncHandler(async (req, res) => {
 
 //@desc Get a contact
 //@route GET /api/contacts/:id
+//@access private
 const getContactById = asyncHandler (async (req, res) => {
     const contact = await Contact.findById(req.params.id);
     if(!contact){
@@ -37,11 +42,18 @@ const getContactById = asyncHandler (async (req, res) => {
 
 //@desc Update a contact
 //@route PUT /api/contacts/:id
+//@access private
 const updateContact = asyncHandler(async (req, res) => {
     const contact = await Contact.findById(req.params.id);
     if(!contact){
         res.status(404);
         throw new Error("Contact not found");
+    }
+
+    //checking if a different user is trying to update a contact of another user
+    if(contact.user_id.toString !== req.user.id){
+      res.status(403);
+      throw new Error("User do not have permission to update the contact of other user");
     }
 
     const updatedContact = await Contact.findByIdAndUpdate(
@@ -54,13 +66,15 @@ const updateContact = asyncHandler(async (req, res) => {
 
 //@desc Delete a contact
 //@route DELETE /api/contacts/:id
+//@access private
 const deleteContact = asyncHandler(async (req, res) => {
     const contact = await Contact.findById(req.params.id);
     if(!contact){
         res.status(404);
         throw new Error("Contact not found");
     }
-    await Contact.findOneAndRemove();
+    // await Contact.findOneAndRemove();
+    await Contact.deleteOne({_id: req.params.id});
     res.status(200).json(contact);
 });
 

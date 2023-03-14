@@ -2,6 +2,7 @@ const express = require("express");
 const connectDb = require("./config/dbConnection");
 const errorHandler = require("./middleware/errorHandler");
 const dotenv = require("dotenv").config();
+const logger = require("./logger");
 
 connectDb();
 const app = express();
@@ -13,6 +14,12 @@ app.use("/api/contacts", require("./routes/contactRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use(errorHandler);
 
+logger.error("error");
+logger.warn("warn");
+logger.info("info");
+logger.verbose("verbose");
+logger.debug("debug");
+
 app.listen(port, () => {
-    console.log(`Server runnning on port ${port}`);
+    logger.info(`Server runnning on port ${port}`);
 });
